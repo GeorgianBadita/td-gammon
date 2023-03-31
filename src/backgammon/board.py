@@ -1,37 +1,13 @@
 from __future__ import annotations
-import copy
-import random
-import backgammon.agent.agent as agent
+
 from collections import namedtuple
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import List
 
+from src.backgammon.agent import agent
 
-class MoveType(Enum):
-    NORMAL = 0
-    BAR_ENTRY = 1
-    BEAR_OFF = 2
-
-
-Move = namedtuple("Move", "from_point to_point move_type")
 BarredPieces = namedtuple("Barred", "white black")
 OffedPieces = namedtuple("Offed", "white black")
-
-
-class MoveRoll:
-    def __init__(self, moves: List[Move]) -> "MoveRoll":
-        self.__moves = moves
-
-    @property
-    def moves(self) -> List[Move]:
-        return self.__moves
-
-
-class BoardState(Enum):
-    NORMAL = 0
-    BARRED_PIECES = 1
-    BEAR_OFF = 2
-    OVER = 3
 
 
 class Player(Enum):
@@ -39,11 +15,11 @@ class Player(Enum):
     BLACK = 1
 
     @classmethod
-    def get_str_repr(_, pl: "Player") -> str:
+    def get_str_repr(cls, pl: "Player") -> str:
         return "w" if pl == Player.WHITE else "b"
 
     @classmethod
-    def get_player_from_str_repr(_, str_repr: str) -> "Player":
+    def get_player_from_str_repr(cls, str_repr: str) -> "Player":
         if str_repr not in ["b", "w"]:
             raise ValueError(
                 f"{str_repr} is not a valid string representation for Player"
@@ -52,7 +28,7 @@ class Player(Enum):
         return Player.WHITE if str_repr == "w" else Player.BLACK
 
     @classmethod
-    def get_home_board_range(_, pl: "Player") -> List[int]:
+    def get_home_board_range(cls, pl: "Player") -> List[int]:
         if pl == Player.WHITE:
             return list(range(6))
         else:
@@ -75,16 +51,16 @@ class Board:
     INIT_CHECKER_COUNT: int = 15
 
     def __init__(
-        self,
-        points: List[int],
-        turn: Player,
-        barred_white: int,
-        barred_black: int,
-        offed_white: int,
-        offed_black: int,
-    ) -> "Board":
-        # points[idx] = {-n, if there are n black checkers at idxth point,
-        # n if there are n white checkers at idxth point. 0 <= idx < 24
+            self,
+            points: List[int],
+            turn: Player,
+            barred_white: int,
+            barred_black: int,
+            offed_white: int,
+            offed_black: int,
+    ):
+        # points[idx] = {-n, if there are n black checkers at idx-th point,
+        # n if there are n white checkers at idx-th point. 0 <= idx < 24
         self.__points = points
         self.__turn = turn
         self.__barred_white = barred_white
@@ -112,77 +88,73 @@ class Board:
     def offed(self) -> OffedPieces:
         return OffedPieces(self.__offed_white, self.__offed_black)
 
-    @property
-    def is_game_over(self) -> bool:
-        return (
-            self.__offed_black == Board.INIT_CHECKER_COUNT
-            or self.__offed_white == Board.INIT_CHECKER_COUNT
-        )
+    def inc_offed(self, pl: Player):
+        if pl == Player.WHITE:
+            self.__offed_white += 1
+        else:
+            self.__offed_black += 1
 
-    @property
-    def game_state_for_current_turn(self) -> BoardState:
-        if self.is_game_over:
-            return BoardState.OVER
-        if (self.__turn == Player.WHITE and self.__barred_white > 0) or (
-            self.__turn == Player.BLACK and self.__barred_black > 0
-        ):
-            return BoardState.BARRED_PIECES
-        if self.__all_pieces_in_house_for_turn():
-            return BoardState.BEAR_OFF
-        return BoardState.NORMAL
+    def dec_offed(self, pl: Player):
+        if pl == Player.WHITE:
+            self.__offed_white -= 1
+        else:
+            self.__offed_black -= 1
 
-    @property
-    def winner(self) -> Optional[Player]:
-        if self.__offed_black == Board.INIT_CHECKER_COUNT:
-            return Player.BLACK
-        elif self.__offed_white == Board.INIT_CHECKER_COUNT:
-            return Player.WHITE
-        return None
+    def inc_barred(self, pl: Player):
+        if pl == Player.WHITE:
+            self.__barred_white += 1
+        else:
+            self.__barred_black += 1
 
-    def roll_dice(self) -> Tuple[int, int]:
-        """
-        Function that rolls a dice
-        @return tuple of (int, int), with each int <= 6
-        """
-        return (random.randint(1, 6), random.randint(1, 6))
+    def dec_barred(self, pl: Player):
+        if pl == Player.WHITE:
+            self.__barred_white -= 1
+        else:
+            self.__barred_black -= 1
 
-    def clone(self) -> "Board":
-        point_copy = copy.deepcopy(self.__points)
-        return Board(
-            point_copy,
-            self.__turn,
-            self.__barred_white,
-            self.__barred_black,
-            self.__offed_white,
-            self.__offed_black,
-        )
+    def inc_point(self, idx: int):
+        self.__points[idx] += 1
+
+    def dec_point(self, idx: int):
+        self.__points[idx] -= 1
+
+    def num_checkers_at_index(self, idx: int) -> int:
+        return abs(self.__points[idx])
+
+    def index_in_home(self, idx: int, pl: Player) -> bool:
+        match pl:
+            case Player.WHITE:
+                return 0 <= idx <= 5
+            case Player.BLACK:
+                return 18 <= idx <= 23
 
     def serialize_board(self) -> str:
         """
         Function for serializing a backgammon board position
         The board is encoded similarly to chess FEN notation
         e.g. 1-2-b/6-5-w/8-3-w/12-5-b/13-5-w/17-3-b/19-5-b/24-2-w w 0 0 0 0
-        represents the satart position for backgammon game
-        groups a-b-c mean: there are b checkers of c color on point a
+        represents the starting position for backgammon game
+        groups a-b-c mean: there are b checkers of c color on point an
         after all the a-b-c groups, there is a letter representing the current player
         turn, w for WHITE, b for BLACK. After the turn encoding, there are 2 groups of 2 numbers,
         first two numbers represent the number of barred pieces, first for white, then for black.
-        Finnally the last 2 numbers represent the number of offloaded pieces for each player,
+        Finally, the last 2 numbers represent the number of offloaded pieces for each player,
         first for white then for black.
         @return: returns the serialized board to string
         """
 
         checkers = []
         for idx in range(Board.NUM_PLAYABLE_POINTS):
-            if not self.__is_empty_point(idx):
+            if not self.is_empty_point(idx):
                 point, count, side = (
                     idx,
                     self.__points[idx],
                     Player.get_str_repr(Player.WHITE),
                 )
-                if self.__is_point_of_color(idx, Player.BLACK):
-                    count, side = -self.__points[idx], Player.get_str_repr(Player.BLACK)
-                checkers.append(f"{point+1}-{count}-{side}")
+                if self.is_point_of_color(idx, Player.BLACK):
+                    count, side = - \
+                        self.__points[idx], Player.get_str_repr(Player.BLACK)
+                checkers.append(f"{point + 1}-{count}-{side}")
         checkers_str = "/".join(checkers)
         return " ".join(
             [
@@ -194,18 +166,18 @@ class Board:
         )
 
     @classmethod
-    def from_string(_: "Board", serialized_board: str) -> "Board":
+    def from_string(cls: "Board", serialized_board: str) -> "Board":
         """
         Function for deserializing a string board position into a backgammon
         board object.
         The board is encoded similarly to chess FEN notation
         e.g. 1-2-b/6-5-w/8-3-w/12-5-b/13-5-w/17-3-b/19-5-b/25-2-w w 0 0 0 0
-        represents the satart position for backgammon game
-        groups a-b-c mean: there are b checkers of c color on point a
+        represents the starting position for backgammon game
+        groups a-b-c mean: there are b checkers of c color on point an
         after all the a-b-c groups, there is a letter representing the current player
         turn, w for WHITE, b for BLACK. After the turn encoding, there are 2 groups of 2 numbers,
         first two numbers represent the number of barred pieces, first for white, then for black.
-        Finnally the last 2 numbers represent the number of offloaded pieces for each player,
+        Finally, the last 2 numbers represent the number of offloaded pieces for each player,
         first for white then for black.
         @return: return the deserialized backgammon game
         """
@@ -237,9 +209,9 @@ class Board:
 
     @classmethod
     def new_board(
-        cls: "Board",
-        starting_player=Player.WHITE,
-    ) -> "Board":
+            cls: "Board",
+            starting_player: agent.Agent,
+    ):
         """
         Function for starting a new fresh backgammon board
         given the starting agent
@@ -248,39 +220,32 @@ class Board:
             return cls.from_string(cls.STARTING_BOARD_SERIALIZED_STARTING_WHITE)
         return cls.from_string(cls.STARTING_BOARD_SERIALIZED_STARTING_BLACK)
 
-    def __is_empty_point(self, idx: int) -> bool:
+    def is_empty_point(self, idx: int) -> bool:
         return self.__points[idx] == 0
 
-    def __is_point_of_color(self, idx: int, color: Player) -> bool:
+    def is_point_of_color(self, idx: int, color: Player) -> bool:
         return (color == Player.WHITE and self.__points[idx] > 0) or (
-            color == Player.BLACK and self.__points[idx] < 0
+                color == Player.BLACK and self.__points[idx] < 0
         )
 
-    def __all_pieces_in_house_for_turn(self) -> bool:
-        """
-        Checks if current player can bear off pieces (essentially if all of their home pieces
-            + all of their already bord off pieces add up to 15
-        )
-        """
-        cnt = 0
-        for idx in Player.get_home_board_range(self.__turn):
-            cnt += (
-                self.__points[idx]
-                if self.__turn == Player.WHITE
-                else -self.__points[idx]
-            )
+    def all_pieces_in_home(self, pl: Player) -> bool:
+        count_for_player = 0
+        player_range = Player.get_home_board_range(pl)
+        for idx in player_range:
+            if self.__points[idx] > 0 and pl == Player.WHITE:
+                count_for_player += self.num_checkers_at_index(idx)
+            elif self.__points[idx] < 0 and pl == Player.BLACK:
+                count_for_player += self.num_checkers_at_index(idx)
 
-        offed_pieces = (
-            self.__offed_white if self.__turn == Player.WHITE else self.__offed_black
-        )
-        return cnt + offed_pieces == Board.INIT_CHECKER_COUNT
+        count_for_player += self.__offed_black if pl == Player.BLACK else self.__offed_white
+        return count_for_player == Board.INIT_CHECKER_COUNT
 
     def __eq__(self: "Board", ot: "Board") -> bool:
         return (
-            self.points == ot.points
-            and self.__turn == ot.turn
-            and self.__barred_black == ot.__barred_black
-            and self.__barred_white == ot.__barred_white
-            and self.__offed_black == ot.__offed_black
-            and self.__offed_white == ot.__offed_white
+                self.points == ot.points
+                and self.__turn == ot.turn
+                and self.__barred_black == ot.__barred_black
+                and self.__barred_white == ot.__barred_white
+                and self.__offed_black == ot.__offed_black
+                and self.__offed_white == ot.__offed_white
         )
