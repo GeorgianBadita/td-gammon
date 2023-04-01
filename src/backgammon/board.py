@@ -34,6 +34,10 @@ class Player(Enum):
         else:
             return list(range(23, 17, -1))
 
+    @classmethod
+    def get_token(cls, pl: "Player") -> str:
+        return "o" if pl == Player.WHITE else "x"
+
 
 class Board:
     """
@@ -71,6 +75,10 @@ class Board:
     @property
     def points(self) -> List[int]:
         return self.__points
+
+    @points.setter
+    def points(self, new_points: List[int]):
+        self.__points = new_points
 
     @property
     def turn(self) -> Player:
@@ -228,7 +236,7 @@ class Board:
                 color == Player.BLACK and self.__points[idx] < 0
         )
 
-    def all_pieces_in_home(self, pl: Player) -> bool:
+    def all_checkers_in_home(self, pl: Player) -> bool:
         count_for_player = 0
         player_range = Player.get_home_board_range(pl)
         for idx in player_range:
@@ -249,3 +257,6 @@ class Board:
                 and self.__offed_black == ot.__offed_black
                 and self.__offed_white == ot.__offed_white
         )
+
+    def __str__(self) -> str:
+        return self.serialize_board()

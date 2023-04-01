@@ -4,3 +4,5 @@ from src.backgammon.board import Player
 
 agent = RandomAgent(Player.WHITE, "Random agent")
 game = BackgammonGame.new_game(agent, agent)
+game.play(debug=True)
+print(game.winner)

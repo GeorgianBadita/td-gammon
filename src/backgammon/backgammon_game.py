@@ -117,15 +117,21 @@ class BackgammonGame:
             return GameState.BEAR_OFF
         return GameState.NORMAL
 
-    def play(self) -> Player:
+    def play(self, debug=False) -> Player:
         """
         Function that plays a game until it finishes
         """
+        turn_idx = 0
+
         while not self.is_game_over:
             self.play_turn()
             self.board.turn = (
                 Player.WHITE if self.__board.turn == Player.BLACK else Player.BLACK
             )
+            if debug and turn_idx % 100 == 0:
+                print(f"Turn {turn_idx}")
+                print(self.board)
+            turn_idx += 1
 
         winner = self.winner
         if winner is None:
@@ -136,7 +142,7 @@ class BackgammonGame:
 
     def play_turn(self):
         die_roll = self.roll_die()
-        move_rolls = self.get_possible_move_rolls(die_roll)
+        move_rolls = list(self.get_possible_move_rolls(die_roll))
 
         if self.board.turn == Player.WHITE:
             selected_move = self.__white_player_agent.get_move(move_rolls)
@@ -155,22 +161,22 @@ class BackgammonGame:
             count = 4
             while not move_rolls and count > 0:
                 self.__get_move_rolls(
-                    tuple([r1] * count), None, move_rolls, self.__board.turn)
+                    tuple([r1] * count), [], move_rolls)
                 count -= 1
         else:
             self.__get_move_rolls(
-                die_roll, None, move_rolls, self.__board.turn)
+                die_roll, [], move_rolls)
             self.__get_move_rolls(
-                (r2, r1), None, move_rolls, self.__board.turn)
+                (r2, r1), [], move_rolls)
             if not move_rolls:
                 one_die_moves_r1 = self.__get_possible_moves_for_die(
-                    r1, self.__board.turn)
+                    r1)
                 if one_die_moves_r1:
                     for move in one_die_moves_r1:
                         move_rolls.add(MoveRoll([move]))
                 if not move_rolls:
                     one_die_moves_r2 = self.__get_possible_moves_for_die(
-                        r2, self.__board.turn)
+                        r2)
                     if one_die_moves_r2:
                         for move in one_die_moves_r2:
                             move_rolls.add(MoveRoll([move]))
@@ -195,7 +201,7 @@ class BackgammonGame:
             self.__undo_move(mv)
 
     def roll_die(self) -> Tuple[int, int]:
-        return random.randint(0, 6), random.randint(0, 6)
+        return random.randint(1, 6), random.randint(1, 6)
 
     def clone(self) -> "BackgammonGame":
         point_copy = copy.deepcopy(self.board.points)
@@ -217,7 +223,7 @@ class BackgammonGame:
             cls: "BackgammonGame",
             white_agent: agent.Agent,
             black_agent: agent.Agent,
-            starting_player: object = Player.WHITE,
+            starting_player: Player = Player.WHITE,
     ) -> "BackgammonGame":
         """
         Function for starting a new fresh backgammon game
@@ -244,19 +250,102 @@ class BackgammonGame:
     def __get_move_rolls(
             self,
             die_roll: Tuple,
-            move_roll: Optional[MoveRoll],
-            move_rolls: Set[MoveRoll],
-            turn: Player,
+            moves: List[Move],
+            move_rolls: Set[MoveRoll]
     ):
         """
         Function for getting all possible move rolls for a given die roll
         """
-        if len(die_roll) == 0 and move_roll is not None:
-            move_rolls.add(move_roll)
+        if len(die_roll) == 0 and moves:
+            move_rolls.add(MoveRoll(moves))
             return
 
-    def __get_possible_moves_for_die(self, die: int, turn: Player) -> List[Move]:
-        return []
+        d, d_rs = die_roll[0], die_roll[1:]
+        moves_one_die = self.__get_possible_moves_for_die(d)
+        for move in moves_one_die:
+            self.__apply_move(move)
+            self.__get_move_rolls(d_rs, moves + [move], move_rolls)
+            self.__undo_move(move)
+
+    def __get_possible_moves_for_die(self, die: int) -> Set[Move]:
+        moves = set()
+        match self.game_state_for_current_turn:
+            case GameState.NORMAL:
+                direction = 1
+                if self.__board.turn == Player.WHITE:
+                    direction = -1
+                moves.update(self.__get_normal_moves_for_die(0, Board.NUM_PLAYABLE_POINTS, direction, die))
+            case GameState.BARRED_PIECES:
+                if self.__board.turn == Player.WHITE:
+                    checker_num = self.__board.num_checkers_at_index(Board.NUM_PLAYABLE_POINTS - die)
+                    # If the destination is of the moving player's color or empty
+                    if self.__board.is_point_of_color(Board.NUM_PLAYABLE_POINTS - die, self.__board.turn) or \
+                            checker_num == 0:
+                        # Make a normal bar entry move
+                        moves.add(Move(-1, Board.NUM_PLAYABLE_POINTS - die, MoveType.BAR_ENTRY))
+                    elif not self.__board.is_point_of_color(Board.NUM_PLAYABLE_POINTS - die, self.__board.turn) and \
+                            checker_num == 1:
+                        # Make a normal bar entry move that also puts one of the opponent's checkers on the bar
+                        moves.add(Move(-1, Board.NUM_PLAYABLE_POINTS - die, MoveType.BAR_ENTRY_PUT_ON_BAR))
+                else:
+                    checker_num = self.__board.num_checkers_at_index(die - 1)
+                    # If the destination is of the moving player's color or empty
+                    if self.__board.is_point_of_color(die - 1, self.__board.turn) or \
+                            checker_num == 0:
+                        # Make a normal bar entry move
+                        moves.add(Move(-1, die - 1, MoveType.BAR_ENTRY))
+                    elif not self.__board.is_point_of_color(die - 1, self.__board.turn) and \
+                            checker_num == 1:
+                        # Make a normal bar entry move that also puts one of the opponent's checkers on the bar
+                        moves.add(Move(-1, die - 1, MoveType.BAR_ENTRY_PUT_ON_BAR))
+            case GameState.BEAR_OFF:
+                direction = 1
+                if self.__board.turn == Player.WHITE:
+                    direction = -1
+                    moves.update(self.__get_normal_moves_for_die(0, 6, direction, die))
+                    index_of_last_checker = 5
+                    while index_of_last_checker >= 0 >= self.__board.points[index_of_last_checker]:
+                        index_of_last_checker -= 1
+                    if die >= index_of_last_checker + 1:
+                        moves.add(Move(index_of_last_checker, -1, MoveType.BEAR_OFF))
+                    if self.__board.points[die - 1] > 0:
+                        moves.add(Move(die - 1, -1, MoveType.BEAR_OFF))
+                else:
+                    moves.update(self.__get_normal_moves_for_die(18, Board.NUM_PLAYABLE_POINTS, direction, die))
+                    index_of_last_checker = 18
+                    while index_of_last_checker < Board.NUM_PLAYABLE_POINTS and \
+                            self.__board.points[index_of_last_checker] >= 0:
+                        index_of_last_checker += 1
+                    if die >= Board.NUM_PLAYABLE_POINTS - index_of_last_checker:
+                        moves.add(Move(index_of_last_checker, -1, MoveType.BEAR_OFF))
+                    if self.__board.points[Board.NUM_PLAYABLE_POINTS - die] < 0:
+                        moves.add(Move(Board.NUM_PLAYABLE_POINTS - die, -1, MoveType.BEAR_OFF))
+        return moves
+
+    def __get_normal_moves_for_die(self, start: int, end: int, direction: int, die: int) -> List[Move]:
+        moves = []
+        for idx in range(start, end):
+            # Check if the starting point is of the moving player's color
+            # And there is at least one checker to move
+            if self.__board.is_point_of_color(idx, self.__board.turn) and self.__board.num_checkers_at_index(
+                    idx) > 0:
+                dest_idx = idx + (die * direction)
+                # If the destination is on the board
+                if self.__is_destination_valid(dest_idx):
+                    # If the destination is of the moving player's color or empty
+                    if self.__board.is_point_of_color(dest_idx, self.__board.turn) or \
+                            self.__board.num_checkers_at_index(dest_idx) == 0:
+                        # Make a normal move
+                        moves.append(Move(idx, dest_idx, MoveType.NORMAL))
+                    # If the destination is of the opponent's color
+                    elif not self.__board.is_point_of_color(dest_idx, self.__board.turn) and \
+                            self.__board.num_checkers_at_index(dest_idx) == 1:
+                        # Make a normal moves that also puts one of the opponent's checkers on the bar
+                        moves.append(Move(idx, dest_idx, MoveType.NORMAL_PUT_ON_BAR))
+        return moves
+
+    def __is_destination_valid(self, idx) -> bool:
+        return 0 <= idx < Board.NUM_PLAYABLE_POINTS
 
     def __apply_move(self, mv: Move):
         """
@@ -335,6 +424,8 @@ class BackgammonGame:
                     self.__board.dec_point(to_point)
                     # Add the white piece to the bar
                     self.__board.inc_barred(Player.WHITE)
+        # TODO: remove this once piece invariant bugs are solved
+        self.__assert_checkers_invariant()
 
     def __undo_move(self, mv: Move):
         """
@@ -409,14 +500,27 @@ class BackgammonGame:
                     # Add the white checker to the bar
                     self.__board.inc_barred(Player.WHITE)
 
+        # TODO: remove this once piece invariant bugs are solved
+        self.__assert_checkers_invariant()
+        
+    def __assert_checkers_invariant(self):
+        # Checks that there are always 30 pieces in the game (board + barred + offed)
+        num = 0
+        offed = self.__board.offed
+        barred = self.__board.barred
+        for idx in range(Board.NUM_PLAYABLE_POINTS):
+            num += self.__board.num_checkers_at_index(idx)
+        total = num + barred.white + barred.black + offed.white + offed.black
+        assert total == 30, f"Piece invariant violated, {total} instead of 30 checkers"
+
     def __all_pieces_in_house_for_turn(self) -> bool:
         """
         Returns true if all the pieces of the player whose turn it is are in their home
         """
         if self.__board.turn == Player.WHITE:
-            return self.__board.all_pieces_in_home(Player.WHITE)
+            return self.__board.all_checkers_in_home(Player.WHITE)
         else:
-            return self.__board.all_pieces_in_home(Player.BLACK)
+            return self.__board.all_checkers_in_home(Player.BLACK)
 
     def __eq__(self: "BackgammonGame", ot: "BackgammonGame") -> bool:
         return (

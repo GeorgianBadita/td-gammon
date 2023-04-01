@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional, Set
+from typing import Optional, List
 
 import src.backgammon.backgammon_game as bg
 
@@ -26,7 +26,7 @@ class Agent(ABC):
     @abstractmethod
     def get_move(
             self,
-            move_rolls: Set[bg.MoveRoll],
+            move_rolls: List[bg.MoveRoll],
             backgammon_game: Optional[bg.BackgammonGame] = None,
     ) -> Optional[bg.MoveRoll]:
         raise NotImplementedError(
