@@ -44,7 +44,6 @@ class Board:
     Class for representing a backgammon board
     """
 
-    TOKENS: List[str] = ["o", "x"]
     STARTING_BOARD_SERIALIZED_STARTING_WHITE = (
         f"1-2-b/6-5-w/8-3-w/12-5-b/13-5-w/17-3-b/19-5-b/24-2-w w 0 0 0 0"
     )
@@ -65,7 +64,7 @@ class Board:
     ):
         # points[idx] = {-n, if there are n black checkers at idx-th point,
         # n if there are n white checkers at idx-th point. 0 <= idx < 24
-        self.__points = points
+        self.points = points
         self.__turn = turn
         self.__barred_white = barred_white
         self.__barred_black = barred_black

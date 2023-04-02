@@ -35,6 +35,9 @@ class MoveRoll:
     def moves(self) -> List[Move]:
         return self.__moves
 
+    def __repr__(self) -> str:
+        return str(self.moves)
+
 
 class GameState(Enum):
     NORMAL = 0
@@ -352,6 +355,7 @@ class BackgammonGame:
         Function for applying a move
         """
         from_point, to_point = mv.from_point, mv.to_point
+        self.__assert_checkers_invariant()
         match mv.move_type:
             case MoveType.NORMAL:
                 if self.__board.is_point_of_color(from_point, Player.WHITE):
@@ -361,9 +365,9 @@ class BackgammonGame:
                     self.__board.inc_point(to_point)
                 else:
                     # Remove the black checker from the source
-                    self.__board.inc_barred(from_point)
+                    self.__board.inc_point(from_point)
                     # Add the black checker to the destination
-                    self.__board.dec_barred(to_point)
+                    self.__board.dec_point(to_point)
             case MoveType.BEAR_OFF:
                 if self.__board.is_point_of_color(from_point, Player.WHITE):
                     # Remove the white checker from the source
@@ -372,7 +376,7 @@ class BackgammonGame:
                     self.__board.inc_offed(Player.WHITE)
                 else:
                     # Remove the black checker from the source
-                    self.__board.inc_barred(from_point)
+                    self.__board.inc_point(from_point)
                     # Add the black checker to the off
                     self.__board.inc_offed(Player.BLACK)
             case MoveType.BAR_ENTRY:
@@ -490,19 +494,19 @@ class BackgammonGame:
                     self.__board.inc_barred(Player.BLACK)
             case MoveType.BAR_ENTRY:
                 if self.__board.is_point_of_color(to_point, Player.WHITE):
-                    # Remove the black checker from the destination point
-                    self.__board.inc_point(to_point)
-                    # Add the black checker to the bar
-                    self.__board.inc_barred(Player.BLACK)
-                else:
                     # Remove the white checker from the destination point
                     self.__board.dec_point(to_point)
                     # Add the white checker to the bar
                     self.__board.inc_barred(Player.WHITE)
+                else:
+                    # Remove the black checker from the destination point
+                    self.__board.inc_point(to_point)
+                    # Add the black checker to the bar
+                    self.__board.inc_barred(Player.BLACK)
 
         # TODO: remove this once piece invariant bugs are solved
         self.__assert_checkers_invariant()
-        
+
     def __assert_checkers_invariant(self):
         # Checks that there are always 30 pieces in the game (board + barred + offed)
         num = 0
