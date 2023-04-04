@@ -219,16 +219,9 @@ def make_bear_off_moves_test_data() -> List[Tuple[str, BackgammonGame, Optional[
             ('white_bears_off_1_checker', game2, move_roll2, expected_board2)]
 
 
-def double_moves(move_list: List[MoveRoll]) -> List[MoveRoll]:
-    mvs = []
-    for mv in move_list:
-        mvs.append(mv)
-        mvs.append(MoveRoll(list(reversed(mv.moves))))
-    return mvs
-
-
 def make_valid_moves_test_data() -> List[Tuple[str, BackgammonGame, Tuple[int, int], List[MoveRoll]]]:
-    # Test 1, black bears off 1 checker
+    # Test 1, test all valid moves from start position, white to move
+    # Die roll is (1, 2)
     white_agent = RandomAgent(Player.WHITE, "Random agent white")
     black_agent = RandomAgent(Player.BLACK, "Random agent black")
     game1 = BackgammonGame.new_game(white_agent, black_agent, starting_player=Player.WHITE)
@@ -261,13 +254,105 @@ def make_valid_moves_test_data() -> List[Tuple[str, BackgammonGame, Tuple[int, i
         MoveRoll([Move(from_point=23, to_point=22, move_type=MoveType.NORMAL),
                   Move(from_point=12, to_point=10, move_type=MoveType.NORMAL)]),
         MoveRoll([Move(from_point=23, to_point=21, move_type=MoveType.NORMAL),
-                  Move(from_point=5, to_point=3, move_type=MoveType.NORMAL)]),
+                  Move(from_point=5, to_point=4, move_type=MoveType.NORMAL)]),
         MoveRoll([Move(from_point=23, to_point=21, move_type=MoveType.NORMAL),
                   Move(from_point=7, to_point=6, move_type=MoveType.NORMAL)]),
     ]
-    expected_move_rolls1 = double_moves(expected_move_rolls1)
 
-    return [('moves_start_position_1_2', game1, die_roll1, expected_move_rolls1)]
+    # Test 2, test all valid moves from start position, black to move
+    # Die roll is (6, 5)
+    game2 = game1.clone()
+    game2.board.turn = Player.BLACK
+    die_roll2 = (6, 5)
+    expected_move_rolls2 = [
+        MoveRoll([Move(from_point=0, to_point=6, move_type=MoveType.NORMAL),
+                  Move(from_point=6, to_point=11, move_type=MoveType.NORMAL)]),
+        MoveRoll([Move(from_point=0, to_point=6, move_type=MoveType.NORMAL),
+                  Move(from_point=11, to_point=16, move_type=MoveType.NORMAL)]),
+        MoveRoll([Move(from_point=0, to_point=6, move_type=MoveType.NORMAL),
+                  Move(from_point=16, to_point=21, move_type=MoveType.NORMAL)]),
+        MoveRoll([Move(from_point=11, to_point=17, move_type=MoveType.NORMAL),
+                  Move(from_point=11, to_point=16, move_type=MoveType.NORMAL)]),
+        MoveRoll([Move(from_point=11, to_point=17, move_type=MoveType.NORMAL),
+                  Move(from_point=16, to_point=21, move_type=MoveType.NORMAL)]),
+        MoveRoll([Move(from_point=11, to_point=17, move_type=MoveType.NORMAL),
+                  Move(from_point=17, to_point=22, move_type=MoveType.NORMAL)]),
+        MoveRoll([Move(from_point=11, to_point=16, move_type=MoveType.NORMAL),
+                  Move(from_point=16, to_point=22, move_type=MoveType.NORMAL)]),
+        MoveRoll([Move(from_point=16, to_point=22, move_type=MoveType.NORMAL),
+                  Move(from_point=16, to_point=21, move_type=MoveType.NORMAL)]),
+    ]
+
+    # Test 3, test where no moves are possible, white to move
+    # Die roll is (1, 3)
+    game3 = game1.clone()
+    game3.board.points[23] = 0
+    game3.board.points[12] = 0
+    game3.board.points[7] = 0
+    game3.board.points[5] = 0
+    game3.board.points[19] = 1
+    die_roll3 = (1, 3)
+    expected_move_rolls3 = []
+
+    # Test 4, test bear off at the end of the game, white to move
+    # Die roll is (2, 3)
+    game4 = game1.clone()
+    game4.board.points[23] = 0
+    game4.board.points[12] = 0
+    game4.board.points[7] = 0
+    game4.board.points[5] = 0
+    game4.board.points[1] = 7
+    game4.board.points[2] = 8
+    die_roll4 = (2, 3)
+    expected_move_rolls4 = [
+        MoveRoll([Move(from_point=1, to_point=-1, move_type=MoveType.BEAR_OFF),
+                  Move(from_point=2, to_point=-1, move_type=MoveType.BEAR_OFF)]),
+        MoveRoll([Move(from_point=2, to_point=-1, move_type=MoveType.BEAR_OFF),
+                  Move(from_point=1, to_point=-1, move_type=MoveType.BEAR_OFF)]),
+    ]
+
+    # Test 5, test bearing off at the end of the game, black to move with normal moves possible
+    # Die roll is (5, 6)
+    game5 = game1.clone()
+    game5.board.turn = Player.BLACK
+    game5.board.points[0] = 0
+    game5.board.points[11] = 0
+    game5.board.points[16] = 0
+    game5.board.points[23] = 0
+    game5.board.points[6] = 2
+    game5.board.points[23] = -10
+    die_roll5 = (5, 6)
+    expected_move_rolls5 = [
+        MoveRoll([Move(from_point=18, to_point=-1, move_type=MoveType.BEAR_OFF),
+                  Move(from_point=18, to_point=23, move_type=MoveType.NORMAL), ]),
+    ]
+
+    return [('moves_start_position_1_2_white', game1, die_roll1, expected_move_rolls1),
+            ('moves_start_position_6_7_black', game2, die_roll2, expected_move_rolls2),
+            ('no_possible_moves_white', game3, die_roll3, expected_move_rolls3),
+            ('bear_off_white_2_3', game4, die_roll4, expected_move_rolls4),
+            ('bear_off_black_whit_normal_moves_5_6', game5, die_roll5, expected_move_rolls5)]
+
+
+def apply_and_clone_game(game: BackgammonGame, mv_roll: MoveRoll) -> BackgammonGame:
+    new_game = game.clone()
+    new_game.apply_move_roll(mv_roll)
+    return new_game
+
+
+def are_move_move_roll_lists_equal(game: BackgammonGame, actual_move_rolls: List[MoveRoll],
+                                   expected_move_rolls: List[MoveRoll]) -> bool:
+    """
+    Compares two lists of move rolls by gathering all end states of applying the moves in the move rolls
+    and checking the differences
+    """
+
+    actual_states = sorted(
+        set(map(lambda mv: apply_and_clone_game(game, mv).board.serialize_board(), actual_move_rolls)))
+    expected_states = sorted(
+        set(map(lambda mv: apply_and_clone_game(game, mv).board.serialize_board(), expected_move_rolls)))
+
+    return actual_states == expected_states
 
 
 class TestBackgammonGame(unittest.TestCase):
@@ -318,8 +403,8 @@ class TestBackgammonGame(unittest.TestCase):
         self.assertEqual(game, expected_game,
                          f"Expected points: {expected_game.board}, actual points: {game.board}")
 
-    # @parameterized.expand(make_valid_moves_test_data())
-    # def test_valid_moves(self, _: str, game: BackgammonGame, die_roll: Tuple[int, int], expected_moves: List[MoveRoll]):
-    #     move_list = sorted(list(game.get_possible_move_rolls(die_roll)))
-    #     expected_moves = sorted(expected_moves)
-    #     self.assertEqual(move_list, expected_moves)
+    @parameterized.expand(make_valid_moves_test_data())
+    def test_valid_moves(self, _: str, game: BackgammonGame, die_roll: Tuple[int, int], expected_moves: List[MoveRoll]):
+        move_list = list(game.get_possible_move_rolls(die_roll))
+        self.assertTrue(are_move_move_roll_lists_equal(game, move_list, expected_moves),
+                        f"Expected moves: {expected_moves}, actual moves: {move_list}")

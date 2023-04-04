@@ -1,11 +1,22 @@
+import time
+
 from backgammon.agent.random_agent import RandomAgent
 from backgammon.backgammon_game import BackgammonGame
 from src.backgammon.board import Player
 
-agent = RandomAgent(Player.WHITE, "Random agent")
-game = BackgammonGame.new_game(agent, agent)
-# game.play(debug=True)
+start = time.time()
+agent_w = RandomAgent(Player.WHITE, "Random white agent")
+agent_b = RandomAgent(Player.BLACK, "Random black agent")
+game = BackgammonGame.new_game(agent_w, agent_b)
+distribution = {Player.WHITE: 0, Player.BLACK: 0}
+for idx in range(10000):
+    new_game = game.clone()
+    new_game.play(debug=False)
+    distribution[new_game.winner] += 1
+    # print(f"\n\nGame {idx} finished. Winner: {new_game.winner}")
 
-two_one = game.get_possible_move_rolls((2, 1))
-print(two_one)
-print(len(two_one))
+print("=========DISTRIBUTION==========")
+print(distribution)
+end = time.time()
+
+print(f"Time elapsed: {(end - start)}")

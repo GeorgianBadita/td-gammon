@@ -141,6 +141,9 @@ class BackgammonGame:
             raise ValueError(
                 "Something is wrong, game needed without a winner, winner is None"
             )
+        if debug:
+            print(f"Winner is {winner} after {turn_idx} turns")
+            print(self.board)
         return winner
 
     def play_turn(self):
@@ -158,7 +161,7 @@ class BackgammonGame:
         move_rolls = set()
         r1, r2 = die_roll
         if r1 < r2:
-            r2, r1 = r1, r2
+            r1, r2 = r2, r1
 
         if r1 == r2:
             count = 4
@@ -168,7 +171,7 @@ class BackgammonGame:
                 count -= 1
         else:
             self.__get_move_rolls(
-                die_roll, [], move_rolls)
+                (r1, r2), [], move_rolls)
             self.__get_move_rolls(
                 (r2, r1), [], move_rolls)
             if not move_rolls:
@@ -429,7 +432,11 @@ class BackgammonGame:
                     # Add the white piece to the bar
                     self.__board.inc_barred(Player.WHITE)
         # TODO: remove this once piece invariant bugs are solved
-        self.__assert_checkers_invariant()
+        try:
+            self.__assert_checkers_invariant()
+        except AssertionError:
+            print(f"Assertion error in __apply_move: {mv}, board: {self.__board}")
+            self.__assert_checkers_invariant()
 
     def __undo_move(self, mv: Move):
         """
