@@ -1,1 +1,1 @@
-# td-backgammon
+# td-gammon
