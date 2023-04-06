@@ -3,4 +3,4 @@ __pycache__
 .vscode
 .idea
 .pytest_cache
-checkpoints
+src/model/checkpoints
