@@ -129,11 +129,9 @@ class Board:
         return abs(self.__points[idx])
 
     def index_in_home(self, idx: int, pl: Player) -> bool:
-        match pl:
-            case Player.WHITE:
-                return 0 <= idx <= 5
-            case Player.BLACK:
-                return 18 <= idx <= 23
+        if pl == Player.WHITE:
+            return 0 <= idx <= 5
+        return 18 <= idx <= 23
 
     def serialize_board(self) -> str:
         """

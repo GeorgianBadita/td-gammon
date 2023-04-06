@@ -143,7 +143,7 @@ class TDGammonModel(nn.Module):
             if save_path and save_step > 0 and episode > 0 and (episode + 1) % save_step == 0:
                 self.save_checkpoint(checkpoint_path=save_path, step=episode, experiment=name_experiment)
                 agents_to_evaluate = {Player.WHITE: ag.TDAgent(Player.WHITE, 'White agent', network),
-                                      Player.BLACK: ag.TDAgent(Player.BLACK, 'Black agent', network), }
+                                      Player.BLACK: rag.RandomAgent(Player.BLACK, 'Black agent'), }
                 self.evaluate_agents(agents_to_evaluate, n_episodes=20)
                 print()
         print("\nAverage duration per game: {} seconds".format(round(sum(durations) / n_episodes, 3)))
@@ -219,10 +219,10 @@ init_weights = True
 path = './checkpoints'
 check = 'test_20230406_0357_20_243751_10000.tar'
 td = TDGammonModel(hidden, lr, lamda, init_weights)
-td.load_model(f'{path}/{check}', optimizer=None, eligibility=True)
-
-agents_to_evaluate = {Player.WHITE: ag.TDAgent(Player.WHITE, 'White agent', td),
-                      Player.BLACK: rag.RandomAgent(Player.BLACK, 'Black agent'), }
-
-td.evaluate_agents(agents_to_evaluate, 1000)
-# td.train(10000, path, 'test', True, 1000)
+# td.load_model(f'{path}/{check}', optimizer=None, eligibility=True)
+#
+# agents_to_evaluate = {Player.WHITE: ag.TDAgent(Player.WHITE, 'White agent', td),
+#                       Player.BLACK: rag.RandomAgent(Player.BLACK, 'Black agent'), }
+#
+# td.evaluate_agents(agents_to_evaluate, 1000)
+td.train(1000000, path, 'test', True, 20000)

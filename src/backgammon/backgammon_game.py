@@ -311,57 +311,56 @@ class BackgammonGame:
 
     def __get_possible_moves_for_die(self, die: int) -> Set[Move]:
         moves = set()
-        match self.game_state_for_current_turn:
-            case GameState.NORMAL:
-                direction = 1
-                if self.__board.turn == Player.WHITE:
-                    direction = -1
-                moves.update(self.__get_normal_moves_for_die(0, Board.NUM_PLAYABLE_POINTS, direction, die))
-            case GameState.BARRED_PIECES:
-                if self.__board.turn == Player.WHITE:
-                    checker_num = self.__board.num_checkers_at_index(Board.NUM_PLAYABLE_POINTS - die)
-                    # If the destination is of the moving player's color or empty
-                    if self.__board.is_point_of_color(Board.NUM_PLAYABLE_POINTS - die, self.__board.turn) or \
-                            checker_num == 0:
-                        # Make a normal bar entry move
-                        moves.add(Move(-1, Board.NUM_PLAYABLE_POINTS - die, MoveType.BAR_ENTRY))
-                    elif not self.__board.is_point_of_color(Board.NUM_PLAYABLE_POINTS - die, self.__board.turn) and \
-                            checker_num == 1:
-                        # Make a normal bar entry move that also puts one of the opponent's checkers on the bar
-                        moves.add(Move(-1, Board.NUM_PLAYABLE_POINTS - die, MoveType.BAR_ENTRY_PUT_ON_BAR))
-                else:
-                    checker_num = self.__board.num_checkers_at_index(die - 1)
-                    # If the destination is of the moving player's color or empty
-                    if self.__board.is_point_of_color(die - 1, self.__board.turn) or \
-                            checker_num == 0:
-                        # Make a normal bar entry move
-                        moves.add(Move(-1, die - 1, MoveType.BAR_ENTRY))
-                    elif not self.__board.is_point_of_color(die - 1, self.__board.turn) and \
-                            checker_num == 1:
-                        # Make a normal bar entry move that also puts one of the opponent's checkers on the bar
-                        moves.add(Move(-1, die - 1, MoveType.BAR_ENTRY_PUT_ON_BAR))
-            case GameState.BEAR_OFF:
-                direction = 1
-                if self.__board.turn == Player.WHITE:
-                    direction = -1
-                    moves.update(self.__get_normal_moves_for_die(0, 6, direction, die))
-                    index_of_last_checker = 5
-                    while index_of_last_checker >= 0 >= self.__board.points[index_of_last_checker]:
-                        index_of_last_checker -= 1
-                    if die >= index_of_last_checker + 1:
-                        moves.add(Move(index_of_last_checker, -1, MoveType.BEAR_OFF))
-                    if self.__board.points[die - 1] > 0:
-                        moves.add(Move(die - 1, -1, MoveType.BEAR_OFF))
-                else:
-                    moves.update(self.__get_normal_moves_for_die(18, Board.NUM_PLAYABLE_POINTS, direction, die))
-                    index_of_last_checker = 18
-                    while index_of_last_checker < Board.NUM_PLAYABLE_POINTS and \
-                            self.__board.points[index_of_last_checker] >= 0:
-                        index_of_last_checker += 1
-                    if die >= Board.NUM_PLAYABLE_POINTS - index_of_last_checker:
-                        moves.add(Move(index_of_last_checker, -1, MoveType.BEAR_OFF))
-                    if self.__board.points[Board.NUM_PLAYABLE_POINTS - die] < 0:
-                        moves.add(Move(Board.NUM_PLAYABLE_POINTS - die, -1, MoveType.BEAR_OFF))
+        if self.game_state_for_current_turn == GameState.NORMAL:
+            direction = 1
+            if self.__board.turn == Player.WHITE:
+                direction = -1
+            moves.update(self.__get_normal_moves_for_die(0, Board.NUM_PLAYABLE_POINTS, direction, die))
+        elif self.game_state_for_current_turn == GameState.BARRED_PIECES:
+            if self.__board.turn == Player.WHITE:
+                checker_num = self.__board.num_checkers_at_index(Board.NUM_PLAYABLE_POINTS - die)
+                # If the destination is of the moving player's color or empty
+                if self.__board.is_point_of_color(Board.NUM_PLAYABLE_POINTS - die, self.__board.turn) or \
+                        checker_num == 0:
+                    # Make a normal bar entry move
+                    moves.add(Move(-1, Board.NUM_PLAYABLE_POINTS - die, MoveType.BAR_ENTRY))
+                elif not self.__board.is_point_of_color(Board.NUM_PLAYABLE_POINTS - die, self.__board.turn) and \
+                        checker_num == 1:
+                    # Make a normal bar entry move that also puts one of the opponent's checkers on the bar
+                    moves.add(Move(-1, Board.NUM_PLAYABLE_POINTS - die, MoveType.BAR_ENTRY_PUT_ON_BAR))
+            else:
+                checker_num = self.__board.num_checkers_at_index(die - 1)
+                # If the destination is of the moving player's color or empty
+                if self.__board.is_point_of_color(die - 1, self.__board.turn) or \
+                        checker_num == 0:
+                    # Make a normal bar entry move
+                    moves.add(Move(-1, die - 1, MoveType.BAR_ENTRY))
+                elif not self.__board.is_point_of_color(die - 1, self.__board.turn) and \
+                        checker_num == 1:
+                    # Make a normal bar entry move that also puts one of the opponent's checkers on the bar
+                    moves.add(Move(-1, die - 1, MoveType.BAR_ENTRY_PUT_ON_BAR))
+        elif self.game_state_for_current_turn == GameState.BEAR_OFF:
+            direction = 1
+            if self.__board.turn == Player.WHITE:
+                direction = -1
+                moves.update(self.__get_normal_moves_for_die(0, 6, direction, die))
+                index_of_last_checker = 5
+                while index_of_last_checker >= 0 >= self.__board.points[index_of_last_checker]:
+                    index_of_last_checker -= 1
+                if die >= index_of_last_checker + 1:
+                    moves.add(Move(index_of_last_checker, -1, MoveType.BEAR_OFF))
+                if self.__board.points[die - 1] > 0:
+                    moves.add(Move(die - 1, -1, MoveType.BEAR_OFF))
+            else:
+                moves.update(self.__get_normal_moves_for_die(18, Board.NUM_PLAYABLE_POINTS, direction, die))
+                index_of_last_checker = 18
+                while index_of_last_checker < Board.NUM_PLAYABLE_POINTS and \
+                        self.__board.points[index_of_last_checker] >= 0:
+                    index_of_last_checker += 1
+                if die >= Board.NUM_PLAYABLE_POINTS - index_of_last_checker:
+                    moves.add(Move(index_of_last_checker, -1, MoveType.BEAR_OFF))
+                if self.__board.points[Board.NUM_PLAYABLE_POINTS - die] < 0:
+                    moves.add(Move(Board.NUM_PLAYABLE_POINTS - die, -1, MoveType.BEAR_OFF))
         return moves
 
     def __get_normal_moves_for_die(self, start: int, end: int, direction: int, die: int) -> List[Move]:
@@ -394,78 +393,79 @@ class BackgammonGame:
         Function for applying a move
         """
         from_point, to_point = mv.from_point, mv.to_point
-        match mv.move_type:
-            case MoveType.NORMAL:
-                if self.__board.is_point_of_color(from_point, Player.WHITE):
-                    # Remove the white checker from the source
-                    self.__board.dec_point(from_point)
-                    # Add the white checker to the destination
-                    self.__board.inc_point(to_point)
-                else:
-                    # Remove the black checker from the source
-                    self.__board.inc_point(from_point)
-                    # Add the black checker to the destination
-                    self.__board.dec_point(to_point)
-            case MoveType.BEAR_OFF:
-                if self.__board.is_point_of_color(from_point, Player.WHITE):
-                    # Remove the white checker from the source
-                    self.__board.dec_point(from_point)
-                    # Add the white checker to the off
-                    self.__board.inc_offed(Player.WHITE)
-                else:
-                    # Remove the black checker from the source
-                    self.__board.inc_point(from_point)
-                    # Add the black checker to the off
-                    self.__board.inc_offed(Player.BLACK)
-            case MoveType.BAR_ENTRY:
-                if self.__board.index_in_home(to_point, Player.BLACK):
-                    # Remove the white piece from the bar
-                    self.__board.dec_barred(Player.WHITE)
-                    # Add the white piece to the board
-                    self.__board.inc_point(to_point)
-                else:
-                    # Remove the black piece from the bar
-                    self.__board.dec_barred(Player.BLACK)
-                    # Add the black piece to the board
-                    self.__board.dec_point(to_point)
-            case MoveType.NORMAL_PUT_ON_BAR:
-                if self.__board.is_point_of_color(from_point, Player.WHITE):
-                    # Remove the white checker from the source
-                    self.__board.dec_point(from_point)
-                    # Add the white checker to the destination
-                    self.__board.inc_point(to_point)
-                    # Remove the black checker from the destination
-                    self.__board.inc_point(to_point)
-                    # Add the black checker to the bar
-                    self.__board.inc_barred(Player.BLACK)
-                else:
-                    # Remove the black checker from the source
-                    self.__board.inc_point(from_point)
-                    # Add the black checker to the destination
-                    self.__board.dec_point(to_point)
-                    # Remove the white checker from the destination
-                    self.__board.dec_point(to_point)
-                    # Add the white checker to the bar
-                    self.__board.inc_barred(Player.WHITE)
-            case MoveType.BAR_ENTRY_PUT_ON_BAR:
-                if self.__board.index_in_home(to_point, Player.BLACK):
-                    # Put the white piece on the board
-                    self.__board.inc_point(to_point)
-                    # Remove the white piece from the bar
-                    self.__board.dec_barred(Player.WHITE)
-                    # Remove the black piece from the board
-                    self.__board.inc_point(to_point)
-                    # Add the black piece to the bar
-                    self.__board.inc_barred(Player.BLACK)
-                else:
-                    # Put the black piece on the board
-                    self.__board.dec_point(to_point)
-                    # Remove the black piece from the bar
-                    self.__board.dec_barred(Player.BLACK)
-                    # Remove the white piece from the board
-                    self.__board.dec_point(to_point)
-                    # Add the white piece to the bar
-                    self.__board.inc_barred(Player.WHITE)
+
+        if mv.move_type == MoveType.NORMAL:
+            if self.__board.is_point_of_color(from_point, Player.WHITE):
+                # Remove the white checker from the source
+                self.__board.dec_point(from_point)
+                # Add the white checker to the destination
+                self.__board.inc_point(to_point)
+            else:
+                # Remove the black checker from the source
+                self.__board.inc_point(from_point)
+                # Add the black checker to the destination
+                self.__board.dec_point(to_point)
+        elif mv.move_type == MoveType.BEAR_OFF:
+            if self.__board.is_point_of_color(from_point, Player.WHITE):
+                # Remove the white checker from the source
+                self.__board.dec_point(from_point)
+                # Add the white checker to the off
+                self.__board.inc_offed(Player.WHITE)
+            else:
+                # Remove the black checker from the source
+                self.__board.inc_point(from_point)
+                # Add the black checker to the off
+                self.__board.inc_offed(Player.BLACK)
+        elif mv.move_type == MoveType.BAR_ENTRY:
+            if self.__board.index_in_home(to_point, Player.BLACK):
+                # Remove the white piece from the bar
+                self.__board.dec_barred(Player.WHITE)
+                # Add the white piece to the board
+                self.__board.inc_point(to_point)
+            else:
+                # Remove the black piece from the bar
+                self.__board.dec_barred(Player.BLACK)
+                # Add the black piece to the board
+                self.__board.dec_point(to_point)
+        elif mv.move_type == MoveType.NORMAL_PUT_ON_BAR:
+            if self.__board.is_point_of_color(from_point, Player.WHITE):
+                # Remove the white checker from the source
+                self.__board.dec_point(from_point)
+                # Add the white checker to the destination
+                self.__board.inc_point(to_point)
+                # Remove the black checker from the destination
+                self.__board.inc_point(to_point)
+                # Add the black checker to the bar
+                self.__board.inc_barred(Player.BLACK)
+            else:
+                # Remove the black checker from the source
+                self.__board.inc_point(from_point)
+                # Add the black checker to the destination
+                self.__board.dec_point(to_point)
+                # Remove the white checker from the destination
+                self.__board.dec_point(to_point)
+                # Add the white checker to the bar
+                self.__board.inc_barred(Player.WHITE)
+        elif mv.move_type == MoveType.BAR_ENTRY_PUT_ON_BAR:
+            if self.__board.index_in_home(to_point, Player.BLACK):
+                # Put the white piece on the board
+                self.__board.inc_point(to_point)
+                # Remove the white piece from the bar
+                self.__board.dec_barred(Player.WHITE)
+                # Remove the black piece from the board
+                self.__board.inc_point(to_point)
+                # Add the black piece to the bar
+                self.__board.inc_barred(Player.BLACK)
+            else:
+                # Put the black piece on the board
+                self.__board.dec_point(to_point)
+                # Remove the black piece from the bar
+                self.__board.dec_barred(Player.BLACK)
+                # Remove the white piece from the board
+                self.__board.dec_point(to_point)
+                # Add the white piece to the bar
+                self.__board.inc_barred(Player.WHITE)
+
         # TODO: remove this once piece invariant bugs are solved
         # self.__assert_checkers_invariant()
 
@@ -474,74 +474,72 @@ class BackgammonGame:
         Function for undoing a move
         """
         from_point, to_point = mv.from_point, mv.to_point
-        match mv.move_type:
-            case MoveType.NORMAL:
-                if self.__board.is_point_of_color(to_point, Player.WHITE):
-                    self.__board.inc_point(from_point)
-                    self.__board.dec_point(to_point)
-                else:
-                    self.__board.dec_point(from_point)
-                    self.__board.inc_point(to_point)
-            case MoveType.BEAR_OFF:
-                if self.__board.index_in_home(from_point, Player.WHITE):
-                    self.__board.inc_point(from_point)
-                    self.__board.dec_offed(Player.WHITE)
-                elif self.__board.index_in_home(from_point, Player.BLACK):
-                    self.__board.dec_point(from_point)
-                    self.__board.dec_offed(Player.BLACK)
-                else:
-                    raise ValueError(
-                        "Bear off move from point not in either player home")
-            case MoveType.NORMAL_PUT_ON_BAR:
-                if self.__board.is_point_of_color(to_point, Player.WHITE):
-                    # Put the white checker back
-                    self.__board.inc_point(from_point)
-                    # Remove the white checker from destination
-                    self.__board.dec_point(to_point)
-                    # Add the black checker back on the destination
-                    self.__board.dec_point(to_point)
-                    # Remove the black checker from the bar
-                    self.__board.dec_barred(Player.BLACK)
-                else:
-                    # Put the black checker back
-                    self.__board.dec_point(from_point)
-                    # Remove the black checker from destination
-                    self.__board.inc_point(to_point)
-                    # Add the white checker back on the destination
-                    self.__board.inc_point(to_point)
-                    # Remove the white checker from the bar
-                    self.__board.dec_barred(Player.WHITE)
-            case MoveType.BAR_ENTRY_PUT_ON_BAR:
-                if self.__board.is_point_of_color(to_point, Player.WHITE):
-                    # Remove the white checker from the destination point
-                    self.__board.dec_point(to_point)
-                    # Add the black checker back on the destination
-                    self.__board.dec_point(to_point)
-                    # Remove the black checker from the bar
-                    self.__board.dec_barred(Player.BLACK)
-                    # Add the white checker back on the bar
-                    self.__board.inc_barred(Player.WHITE)
-                else:
-                    # Remove the black checker from the destination point
-                    self.__board.inc_point(to_point)
-                    # Add the white checker back on the destination
-                    self.__board.inc_point(to_point)
-                    # Remove the white checker from the bar
-                    self.__board.dec_barred(Player.WHITE)
-                    # Add the black checker back on the bar
-                    self.__board.inc_barred(Player.BLACK)
-            case MoveType.BAR_ENTRY:
-                if self.__board.is_point_of_color(to_point, Player.WHITE):
-                    # Remove the white checker from the destination point
-                    self.__board.dec_point(to_point)
-                    # Add the white checker to the bar
-                    self.__board.inc_barred(Player.WHITE)
-                else:
-                    # Remove the black checker from the destination point
-                    self.__board.inc_point(to_point)
-                    # Add the black checker to the bar
-                    self.__board.inc_barred(Player.BLACK)
-
+        if mv.move_type == MoveType.NORMAL:
+            if self.__board.is_point_of_color(to_point, Player.WHITE):
+                self.__board.inc_point(from_point)
+                self.__board.dec_point(to_point)
+            else:
+                self.__board.dec_point(from_point)
+                self.__board.inc_point(to_point)
+        elif mv.move_type == MoveType.BEAR_OFF:
+            if self.__board.index_in_home(from_point, Player.WHITE):
+                self.__board.inc_point(from_point)
+                self.__board.dec_offed(Player.WHITE)
+            elif self.__board.index_in_home(from_point, Player.BLACK):
+                self.__board.dec_point(from_point)
+                self.__board.dec_offed(Player.BLACK)
+            else:
+                raise ValueError(
+                    "Bear off move from point not in either player home")
+        elif mv.move_type == MoveType.NORMAL_PUT_ON_BAR:
+            if self.__board.is_point_of_color(to_point, Player.WHITE):
+                # Put the white checker back
+                self.__board.inc_point(from_point)
+                # Remove the white checker from destination
+                self.__board.dec_point(to_point)
+                # Add the black checker back on the destination
+                self.__board.dec_point(to_point)
+                # Remove the black checker from the bar
+                self.__board.dec_barred(Player.BLACK)
+            else:
+                # Put the black checker back
+                self.__board.dec_point(from_point)
+                # Remove the black checker from destination
+                self.__board.inc_point(to_point)
+                # Add the white checker back on the destination
+                self.__board.inc_point(to_point)
+                # Remove the white checker from the bar
+                self.__board.dec_barred(Player.WHITE)
+        elif mv.move_type == MoveType.BAR_ENTRY_PUT_ON_BAR:
+            if self.__board.is_point_of_color(to_point, Player.WHITE):
+                # Remove the white checker from the destination point
+                self.__board.dec_point(to_point)
+                # Add the black checker back on the destination
+                self.__board.dec_point(to_point)
+                # Remove the black checker from the bar
+                self.__board.dec_barred(Player.BLACK)
+                # Add the white checker back on the bar
+                self.__board.inc_barred(Player.WHITE)
+            else:
+                # Remove the black checker from the destination point
+                self.__board.inc_point(to_point)
+                # Add the white checker back on the destination
+                self.__board.inc_point(to_point)
+                # Remove the white checker from the bar
+                self.__board.dec_barred(Player.WHITE)
+                # Add the black checker back on the bar
+                self.__board.inc_barred(Player.BLACK)
+        elif mv.move_type == MoveType.BAR_ENTRY:
+            if self.__board.is_point_of_color(to_point, Player.WHITE):
+                # Remove the white checker from the destination point
+                self.__board.dec_point(to_point)
+                # Add the white checker to the bar
+                self.__board.inc_barred(Player.WHITE)
+            else:
+                # Remove the black checker from the destination point
+                self.__board.inc_point(to_point)
+                # Add the black checker to the bar
+                self.__board.inc_barred(Player.BLACK)
         # TODO: remove this once piece invariant bugs are solved
         # self.__assert_checkers_invariant()
 
