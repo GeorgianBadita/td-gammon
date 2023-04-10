@@ -3,16 +3,13 @@ from typing import Tuple, List, Optional
 
 from parameterized import parameterized
 
-from src.backgammon.agent.random_agent import RandomAgent
 from src.backgammon.backgammon_game import BackgammonGame, GameState, MoveRoll, Move, MoveType
 from src.backgammon.board import Player, Board
 
 
 def make_compute_game_state_test_data() -> List[Tuple[str, BackgammonGame, GameState]]:
     # Test 1, expect beginning of game to have GamesState.NORMAL
-    white_agent = RandomAgent(Player.WHITE, "Random agent white")
-    black_agent = RandomAgent(Player.BLACK, "Random agent black")
-    game = BackgammonGame.new_game(white_agent, black_agent, starting_player=Player.WHITE)
+    game = BackgammonGame.new_game(starting_player=Player.WHITE)
     expected_game_state = GameState.NORMAL
 
     # Test 2, expect game state to be GameState.BARRED_PIECES when white has barred pieces
@@ -63,9 +60,7 @@ def make_compute_game_state_test_data() -> List[Tuple[str, BackgammonGame, GameS
 
 def make_apply_normal_moves_test_data() -> List[Tuple[str, BackgammonGame, Optional[MoveRoll], BackgammonGame]]:
     # Test 1, expect no move roll provided, nothing happens
-    white_agent = RandomAgent(Player.WHITE, "Random agent white")
-    black_agent = RandomAgent(Player.BLACK, "Random agent black")
-    game = BackgammonGame.new_game(white_agent, black_agent, starting_player=Player.WHITE)
+    game = BackgammonGame.new_game(starting_player=Player.WHITE)
     expected_game = game.clone()
 
     # Test 2, apply 6 points move from white at the beginning of the game
@@ -132,9 +127,7 @@ def make_apply_normal_moves_test_data() -> List[Tuple[str, BackgammonGame, Optio
 
 def make_checker_on_bar_moves_test_data() -> List[Tuple[str, BackgammonGame, Optional[MoveRoll], BackgammonGame]]:
     # Test 1, black has a piece on bar
-    white_agent = RandomAgent(Player.WHITE, "Random agent white")
-    black_agent = RandomAgent(Player.BLACK, "Random agent black")
-    game = BackgammonGame.new_game(white_agent, black_agent, starting_player=Player.WHITE)
+    game = BackgammonGame.new_game(starting_player=Player.WHITE)
     game1 = game.clone()
     game1.board.turn = Player.BLACK
     game1.board.points[16] += 1
@@ -188,9 +181,7 @@ def make_checker_on_bar_moves_test_data() -> List[Tuple[str, BackgammonGame, Opt
 
 def make_bear_off_moves_test_data() -> List[Tuple[str, BackgammonGame, Optional[MoveRoll], BackgammonGame]]:
     # Test 1, black bears off 1 checker
-    white_agent = RandomAgent(Player.WHITE, "Random agent white")
-    black_agent = RandomAgent(Player.BLACK, "Random agent black")
-    game = BackgammonGame.new_game(white_agent, black_agent, starting_player=Player.WHITE)
+    game = BackgammonGame.new_game(starting_player=Player.WHITE)
     game1 = game.clone()
     game1.board.turn = Player.BLACK
     game1.board.points[22] = -7
@@ -222,9 +213,7 @@ def make_bear_off_moves_test_data() -> List[Tuple[str, BackgammonGame, Optional[
 def make_valid_moves_test_data() -> List[Tuple[str, BackgammonGame, Tuple[int, int], List[MoveRoll]]]:
     # Test 1, test all valid moves from start position, white to move
     # Die roll is (1, 2)
-    white_agent = RandomAgent(Player.WHITE, "Random agent white")
-    black_agent = RandomAgent(Player.BLACK, "Random agent black")
-    game1 = BackgammonGame.new_game(white_agent, black_agent, starting_player=Player.WHITE)
+    game1 = BackgammonGame.new_game(starting_player=Player.WHITE)
     die_roll1 = (1, 2)
     expected_move_rolls1 = [
         MoveRoll([Move(from_point=23, to_point=21, move_type=MoveType.NORMAL),

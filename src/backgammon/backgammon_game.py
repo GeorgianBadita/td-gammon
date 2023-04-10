@@ -4,9 +4,10 @@ import copy
 import random
 from collections import namedtuple
 from enum import Enum
-from typing import List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple, Dict, Any
 
-from src.backgammon.agent import agent
+import numpy as np
+
 from src.backgammon.board import Board, Player
 
 
@@ -51,7 +52,7 @@ class BackgammonGame:
     Class for representing a backgammon game
     """
 
-    TOKENS: List[str] = ["o", "x"]
+    TOKENS: Dict[Player, str] = {Player.WHITE: 'o', Player.BLACK: 'x'}
     STARTING_BOARD_SERIALIZED_STARTING_WHITE = (
         f"1-2-b/6-5-w/8-3-w/12-5-b/13-5-w/17-3-b/19-5-b/24-2-w w 0 0 0 0"
     )
@@ -69,26 +70,15 @@ class BackgammonGame:
             barred_black: int,
             offed_white: int,
             offed_black: int,
-            white_player_agent: agent.Agent,
-            black_player_agent: agent.Agent,
     ):
         self.__board = Board(
             points, turn, barred_white, barred_black, offed_white, offed_black
         )
-        self.__white_player_agent = white_player_agent
-        self.__black_player_agent = black_player_agent
+        self.counter = 0
 
     @property
     def board(self) -> Board:
         return self.__board
-
-    @property
-    def white_player_agent(self) -> agent.Agent:
-        return self.__white_player_agent
-
-    @property
-    def black_player_agent(self) -> agent.Agent:
-        return self.__black_player_agent
 
     @property
     def is_game_over(self) -> bool:
@@ -127,7 +117,7 @@ class BackgammonGame:
         features = []
         barred = self.__board.barred
         offed = self.__board.offed
-        for player in [self.white_player_agent.player, self.black_player_agent.player]:
+        for player in [Player.WHITE, Player.BLACK]:
             for idx in range(self.__board.NUM_PLAYABLE_POINTS):
                 point_features = [0.0] * 4
                 if not self.__board.is_empty_point(idx) and self.__board.is_point_of_color(idx, player):
@@ -141,54 +131,62 @@ class BackgammonGame:
                     if num_checkers >= 4:
                         point_features[3] = (num_checkers - 3) / 2
                 features.extend(point_features)
-            features.append((barred.white if player == Player.WHITE else barred.black) / 2.0)
-            features.append(float((offed.white if player == Player.WHITE else offed.black) / Board.INIT_CHECKER_COUNT))
+        features.append(barred.white / 2.0)
+        features.append(barred.black / 2.0)
+        features.append(offed.white / Board.INIT_CHECKER_COUNT)
+        features.append(offed.black / Board.INIT_CHECKER_COUNT)
         if pl == Player.WHITE:
             features.extend([1.0, 0.0])
         else:
             features.extend([0.0, 1.0])
-        return features
+        return np.array(features).reshape(1, -1)
 
-    def play(self, debug: bool = False, with_starting_player: Optional[Player] = None) -> Player:
+    def step(self, mv: Optional[MoveRoll]) -> Tuple[List, int, bool, Dict[Any, Any]]:
         """
-        Function that plays a game until it finishes
+        Step function, compatible with OpenAI gym's model of the step function
+        :return: (observation, reward, done, info)
         """
-        turn_idx = 0
-        if with_starting_player is not None:
-            self.board.turn = with_starting_player
+        if mv is not None:
+            self.apply_move_roll(mv)
 
-        while not self.is_game_over and turn_idx <= 10_000:
-            self.play_turn()
-            self.board.turn = (
-                Player.WHITE if self.__board.turn == Player.BLACK else Player.BLACK
-            )
-            if debug and turn_idx % 100 == 0:
-                print(f"Turn {turn_idx}")
-                print(self.board)
-            turn_idx += 1
+        # Getting the observation from the opponent's perspective as the current player is the one that just played
+        observation = self.get_features(Player.BLACK if self.board.turn == Player.WHITE else Player.WHITE)
+        reward = 0
+        done = self.is_game_over
+        info = {}
 
-        winner = self.winner
-        if turn_idx <= 10_000 and winner is None:
-            raise ValueError(
-                "Something is wrong, game needed without a winner, winner is None"
-            )
-        if debug:
-            print(f"Winner is {winner} after {turn_idx} turns")
-            print(self.board)
-            if turn_idx > 10_000:
-                print("More than 10k rounds for this game, lol")
-        return winner
+        if self.winner is not None or self.counter > 10_000:
+            done = True
+            reward = 1 if self.winner == Player.WHITE else 0
+            info['winner'] = self.winner
 
-    def play_turn(self):
-        die_roll = self.roll_die()
-        move_rolls = list(self.get_possible_move_rolls(die_roll))
+        self.counter += 1
 
-        if self.board.turn == Player.WHITE:
-            selected_move = self.__white_player_agent.get_move(move_rolls)
+        return observation, reward, done, info
+
+    def reset(self) -> Tuple[Player, Tuple[int, int], List]:
+        """
+        Reset the game to the starting position
+        return: current player turn, first roll and initial observation
+        """
+
+        d1, d2 = self.roll_die()
+
+        while d1 == d2:
+            d1, d2 = self.roll_die()
+
+        if d1 > d2:
+            self.__board = Board.from_string(Board.STARTING_BOARD_SERIALIZED_STARTING_WHITE)
         else:
-            selected_move = self.__black_player_agent.get_move(move_rolls)
+            self.__board = Board.from_string(Board.STARTING_BOARD_SERIALIZED_STARTING_BLACK)
 
-        self.apply_move_roll(selected_move)
+        self.counter = 0
+
+        return self.__board.turn, (d1, d2), self.get_features(self.__board.turn)
+
+    def get_and_set_opponent_turn(self) -> Player:
+        self.__board.turn = Player.WHITE if self.__board.turn == Player.BLACK else Player.BLACK
+        return self.__board.turn
 
     def get_possible_move_rolls(self, die_roll: Tuple[int, int]) -> Set[MoveRoll]:
         move_rolls = set()
@@ -253,15 +251,11 @@ class BackgammonGame:
             barred.black,
             offed.white,
             offed.white,
-            self.__white_player_agent,
-            self.__black_player_agent
         )
 
     @classmethod
     def new_game(
             cls: "BackgammonGame",
-            white_agent: agent.Agent,
-            black_agent: agent.Agent,
             # This is a bad design, that should be change
             # Only select a starting player when we use the .play() method
             # There is no point in even constructing the board at this point
@@ -285,9 +279,41 @@ class BackgammonGame:
             board.barred.black,
             board.offed.white,
             board.offed.black,
-            white_agent,
-            black_agent,
         )
+
+    def draw(self):
+        """
+        Function for drawing the board
+        """
+        points = [abs(x) for x in self.__board.points]
+        bottom_board = points[:12][::-1]
+        top_board = points[12:]
+        colors = [self.TOKENS[Player.WHITE if x > 0 else Player.BLACK] for x in self.board.points]
+        bottom_checkers_color = colors[:12][::-1]
+        top_checkers_color = colors[12:]
+
+        print("| 12 | 13 | 14 | 15 | 16 | 17 | BAR | 18 | 19 | 20 | 21 | 22 | 23 | OFF |")
+        print(f"|--------Outer Board----------|     |-------P={self.TOKENS[Player.BLACK]} Home Board--------|     |")
+        self.__print_half_board(top_board, top_checkers_color, Player.WHITE, rev=1)
+        print("|-----------------------------|     |-----------------------------|     |")
+        self.__print_half_board(bottom_board, bottom_checkers_color, Player.BLACK, rev=-1)
+        print(f"|--------Outer Board----------|     |-------P={self.TOKENS[Player.WHITE]} Home Board--------|     |")
+        print("| 11 | 10 |  9 |  8 |  7 |  6 | BAR |  5 |  4 |  3 |  2 |  1 |  0 | OFF |\n")
+
+    def __print_half_board(self, half_board: List[int], colors: List[str], player: Player, rev: int = 1):
+        token = self.TOKENS[player]
+        offed = self.board.offed
+        bar = self.board.barred
+        off_player = offed.white if player == Player.WHITE else offed.black
+        bar_player = bar.white if player == Player.WHITE else bar.black
+
+        max_len = max([max(half_board), off_player, bar_player])
+        for idx in range(max_len)[::rev]:
+            row = [str(colors[k]) if half_board[k] > idx else " " for k in range(len(half_board))]
+            bar = [f"{token} " if bar_player > idx else "  "]
+            off = [f"{token} " if off_player > idx else "  "]
+            row = row[:6] + bar + row[6:] + off
+            print("|  " + " |  ".join(row) + " |")
 
     def __get_move_rolls(
             self,
@@ -563,8 +589,4 @@ class BackgammonGame:
             return self.__board.all_checkers_in_home(Player.BLACK)
 
     def __eq__(self: "BackgammonGame", ot: "BackgammonGame") -> bool:
-        return (
-                self.__board == ot.board
-                and self.__white_player_agent == ot.white_player_agent
-                and self.__black_player_agent == ot.black_player_agent
-        )
+        return self.__board == ot.board

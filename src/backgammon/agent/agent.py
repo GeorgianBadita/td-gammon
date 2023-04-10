@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 import src.backgammon.backgammon_game as bg
 
@@ -28,6 +28,7 @@ class Agent(ABC):
             self,
             move_rolls: List[bg.MoveRoll],
             backgammon_game: Optional[bg.BackgammonGame] = None,
+            roll: Optional[Tuple[int, int]] = None
     ) -> Optional[bg.MoveRoll]:
         raise NotImplementedError(
             f"Method get_move must be implemented for {self.__class__}"
