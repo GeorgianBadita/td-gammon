@@ -236,6 +236,7 @@ class Model(object):
 
         validation_interval = 10_000
         episodes = 200_000
+        wins = {Player.WHITE: 0, Player.BLACK: 0}
 
         for episode in range(episodes):
             if episode != 0 and episode % validation_interval == 0:
@@ -247,6 +248,7 @@ class Model(object):
             observation = env.get_features(agent.player)
             reward = 0
 
+            t = time.time()
             for _ in count():
                 if first_roll:
                     roll = first_roll
@@ -266,9 +268,21 @@ class Model(object):
                 agent = agents[agent_type]
 
                 if done:
-                    break
+                    if env.winner is not None:
+                        wins[env.winner] += 1
+                        
+                    tot = sum(wins.values())
+                    tot = tot if tot > 0 else 1
 
-            winner = env.winner
+                    print(
+                        "Game={:<6d} | Winner={} | after {:<4} plays || Wins: {}={:<6}({:<5.1f}%) | "
+                        "{}={:<6}({:<5.1f}%) | Duration={:<.3f} sec".format(
+                            episode + 1, env.winner, env.counter,
+                            agents[Player.WHITE].name, wins[Player.WHITE], (wins[Player.WHITE] / tot) * 100,
+                            agents[Player.BLACK].name, wins[Player.BLACK], (wins[Player.BLACK] / tot) * 100,
+                            time.time() - t))
+
+                    break
 
             _, global_step, summaries, _ = self.sess.run([
                 self.train_op,
@@ -277,8 +291,6 @@ class Model(object):
                 self.reset_op
             ], feed_dict={self.x: observation, self.V_next: np.array([[reward]], dtype='float')})
             summary_writer.add_summary(summaries, global_step=global_step)
-
-            print("Game %d/%d (Winner: %s) in %d turns" % (episode, episodes, agents[winner].player, env.counter))
             self.saver.save(self.sess, self.checkpoint_path + 'checkpoint', global_step=global_step)
 
         summary_writer.close()
