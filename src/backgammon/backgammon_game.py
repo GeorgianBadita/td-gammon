@@ -53,14 +53,6 @@ class BackgammonGame:
     """
 
     TOKENS: Dict[Player, str] = {Player.WHITE: 'o', Player.BLACK: 'x'}
-    STARTING_BOARD_SERIALIZED_STARTING_WHITE = (
-        f"1-2-b/6-5-w/8-3-w/12-5-b/13-5-w/17-3-b/19-5-b/24-2-w w 0 0 0 0"
-    )
-    STARTING_BOARD_SERIALIZED_STARTING_BLACK = (
-        f"1-2-b/6-5-w/8-3-w/12-5-b/13-5-w/17-3-b/19-5-b/24-2-w b 0 0 0 0"
-    )
-    NUM_PLAYABLE_POINTS: int = 24
-    INIT_CHECKER_COUNT: int = 15
 
     def __init__(
             self,
@@ -106,7 +98,7 @@ class BackgammonGame:
                 self.__board.turn == Player.BLACK and barred.black > 0
         ):
             return GameState.BARRED_PIECES
-        if self.__all_pieces_in_house_for_turn():
+        if self.__all_checkers_in_house_for_turn():
             return GameState.BEAR_OFF
         return GameState.NORMAL
 
@@ -221,6 +213,9 @@ class BackgammonGame:
         return move_rolls
 
     def apply_move_roll(self, mv: Optional[MoveRoll]):
+        """
+        Function that applies a move roll
+        """
         if mv is None:
             return
 
@@ -229,7 +224,7 @@ class BackgammonGame:
 
     def undo_move_roll(self, mv_roll: Optional[MoveRoll]):
         """
-        Think more about undo move roll as it is not so easy
+        Function that undoes a move roll
         """
         if mv_roll is None:
             return
@@ -256,15 +251,12 @@ class BackgammonGame:
     @classmethod
     def new_game(
             cls: "BackgammonGame",
-            # This is a bad design, that should be change
-            # Only select a starting player when we use the .play() method
-            # There is no point in even constructing the board at this point
             starting_player: Player = Player.WHITE,
     ) -> "BackgammonGame":
         """
         Function for starting a new fresh backgammon game
-        given the starting agents
         """
+        
         if starting_player == Player.WHITE:
             board = Board.from_string(
                 Board.STARTING_BOARD_SERIALIZED_STARTING_WHITE)
@@ -283,7 +275,8 @@ class BackgammonGame:
 
     def draw(self):
         """
-        Function for drawing the board
+        Function for drawing the board,
+        inspired from: https://github.com/dellalibera/gym-backgammon/
         """
         points = [abs(x) for x in self.__board.points]
         bottom_board = points[:12][::-1]
@@ -492,9 +485,6 @@ class BackgammonGame:
                 # Add the white piece to the bar
                 self.__board.inc_barred(Player.WHITE)
 
-        # TODO: remove this once piece invariant bugs are solved
-        # self.__assert_checkers_invariant()
-
     def __undo_move(self, mv: Move):
         """
         Function for undoing a move
@@ -566,10 +556,9 @@ class BackgammonGame:
                 self.__board.inc_point(to_point)
                 # Add the black checker to the bar
                 self.__board.inc_barred(Player.BLACK)
-        # TODO: remove this once piece invariant bugs are solved
-        # self.__assert_checkers_invariant()
 
     def __assert_checkers_invariant(self):
+        # NOTE: this invariant check is not currently used, as the whole action generation/application was tested
         # Checks that there are always 30 pieces in the game (board + barred + offed)
         num = 0
         offed = self.__board.offed
@@ -579,7 +568,7 @@ class BackgammonGame:
         total = num + barred.white + barred.black + offed.white + offed.black
         assert total == 30, f"Piece invariant violated, {total} instead of 30 checkers"
 
-    def __all_pieces_in_house_for_turn(self) -> bool:
+    def __all_checkers_in_house_for_turn(self) -> bool:
         """
         Returns true if all the pieces of the player whose turn it is are in their home
         """
