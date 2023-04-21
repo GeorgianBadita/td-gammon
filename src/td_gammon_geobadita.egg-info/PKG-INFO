@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: td-gammon-geobadita
+Version: 0.0.3
+Summary: A TD-Gammon implementation in Python
+Author-email: Geo Badita <geo.badita@gmail.com>
+Project-URL: Homepage, https://github.com/GeorgianBadita/td-gammon
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# td-gammon-geobadita
+
+Td-gammon, needs more documentation
+
