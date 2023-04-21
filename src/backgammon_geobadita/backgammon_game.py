@@ -8,7 +8,7 @@ from typing import List, Optional, Set, Tuple, Dict, Any
 
 import numpy as np
 
-from src.backgammon.board import Board, Player
+from src.backgammon_geobadita.board import Board, Player
 
 
 class MoveType(Enum):
@@ -49,7 +49,7 @@ class GameState(Enum):
 
 class BackgammonGame:
     """
-    Class for representing a backgammon game
+    Class for representing a backgammon_geobadita game
     """
 
     TOKENS: Dict[Player, str] = {Player.WHITE: 'o', Player.BLACK: 'x'}
@@ -135,7 +135,7 @@ class BackgammonGame:
 
     def step(self, mv: Optional[MoveRoll]) -> Tuple[List, int, bool, Dict[Any, Any]]:
         """
-        Step function, compatible with OpenAI gym's model of the step function
+        Step function, compatible with OpenAI gym's model_geobadita of the step function
         :return: (observation, reward, done, info)
         """
         if mv is not None:
@@ -249,14 +249,29 @@ class BackgammonGame:
         )
 
     @classmethod
+    def from_string(cls, board_str: str) -> "BackgammonGame":
+        """
+        Function for creating a BackgammonGame object from a string
+        """
+        board = Board.from_string(board_str)
+        return BackgammonGame(
+            board.points,
+            board.turn,
+            board.barred.white,
+            board.barred.black,
+            board.offed.white,
+            board.offed.black,
+        )
+
+    @classmethod
     def new_game(
             cls: "BackgammonGame",
             starting_player: Player = Player.WHITE,
     ) -> "BackgammonGame":
         """
-        Function for starting a new fresh backgammon game
+        Function for starting a new fresh backgammon_geobadita game
         """
-        
+
         if starting_player == Player.WHITE:
             board = Board.from_string(
                 Board.STARTING_BOARD_SERIALIZED_STARTING_WHITE)

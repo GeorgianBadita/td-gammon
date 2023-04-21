@@ -6,10 +6,10 @@ from itertools import count
 import numpy as np
 import tensorflow as tf
 
-import src.backgammon.agent.random_agent as rag
-import src.backgammon.agent.td_agent as ag
-from src.backgammon.backgammon_game import BackgammonGame
-from src.backgammon.board import Player
+import src.backgammon_geobadita.agent.random_agent as rag
+import src.backgammon_geobadita.agent.td_agent as ag
+from src.backgammon_geobadita.backgammon_game import BackgammonGame
+from src.backgammon_geobadita.board import Player
 
 
 # helper to initialize a weight and bias variable
@@ -70,7 +70,7 @@ class Model(object):
         # mean squared error of the difference between the next state and the current state
         loss_op = tf.reduce_mean(input_tensor=tf.square(self.V_next - self.V), name='loss')
 
-        # check if the model predicts the correct state
+        # check if the model_geobadita predicts the correct state
         accuracy_op = tf.reduce_sum(
             input_tensor=tf.cast(tf.equal(tf.round(self.V_next), tf.round(self.V)), dtype='float'),
             name='accuracy')
@@ -165,7 +165,7 @@ class Model(object):
         # run variable initializers
         self.sess.run(tf.compat.v1.initialize_all_variables())
 
-        # after training a model, we can restore checkpoints here
+        # after training a model_geobadita, we can restore checkpoints here
         if restore:
             self.restore()
 
@@ -270,7 +270,7 @@ class Model(object):
                 if done:
                     if env.winner is not None:
                         wins[env.winner] += 1
-                        
+
                     tot = sum(wins.values())
                     tot = tot if tot > 0 else 1
 

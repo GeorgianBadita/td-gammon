@@ -1,7 +1,7 @@
 import unittest
 
-from src.backgammon.agent.random_agent import RandomAgent
-from src.backgammon.board import Player, Board
+from agent.random_agent import RandomAgent
+from board import Player, Board
 
 
 class TestBoard(unittest.TestCase):

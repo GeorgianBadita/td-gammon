@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional, List, Tuple
 
-import src.backgammon.backgammon_game as bg
+import src.backgammon_geobadita.backgammon_game as bg
 
 
 class Agent(ABC):

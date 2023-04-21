@@ -4,7 +4,7 @@ from collections import namedtuple
 from enum import Enum
 from typing import List
 
-from src.backgammon.agent import agent
+from src.backgammon_geobadita.agent import agent
 
 BarredPieces = namedtuple("Barred", "white black")
 OffedPieces = namedtuple("Offed", "white black")
@@ -41,7 +41,7 @@ class Player(Enum):
 
 class Board:
     """
-    Class for representing a backgammon board
+    Class for representing a backgammon_geobadita board
     """
 
     STARTING_BOARD_SERIALIZED_STARTING_WHITE = (
@@ -135,10 +135,10 @@ class Board:
 
     def serialize_board(self) -> str:
         """
-        Function for serializing a backgammon board position
+        Function for serializing a backgammon_geobadita board position
         The board is encoded similarly to chess FEN notation
         e.g. 1-2-b/6-5-w/8-3-w/12-5-b/13-5-w/17-3-b/19-5-b/24-2-w w 0 0 0 0
-        represents the starting position for backgammon game
+        represents the starting position for backgammon_geobadita game
         groups a-b-c mean: there are b checkers of c color on point an
         after all the a-b-c groups, there is a letter representing the current player
         turn, w for WHITE, b for BLACK. After the turn encoding, there are 2 groups of 2 numbers,
@@ -173,18 +173,18 @@ class Board:
     @classmethod
     def from_string(cls: "Board", serialized_board: str) -> "Board":
         """
-        Function for deserializing a string board position into a backgammon
+        Function for deserializing a string board position into a backgammon_geobadita
         board object.
         The board is encoded similarly to chess FEN notation
         e.g. 1-2-b/6-5-w/8-3-w/12-5-b/13-5-w/17-3-b/19-5-b/25-2-w w 0 0 0 0
-        represents the starting position for backgammon game
+        represents the starting position for backgammon_geobadita game
         groups a-b-c mean: there are b checkers of c color on point an
         after all the a-b-c groups, there is a letter representing the current player
         turn, w for WHITE, b for BLACK. After the turn encoding, there are 2 groups of 2 numbers,
         first two numbers represent the number of barred pieces, first for white, then for black.
         Finally, the last 2 numbers represent the number of offloaded pieces for each player,
         first for white then for black.
-        @return: return the deserialized backgammon game
+        @return: return the deserialized backgammon_geobadita game
         """
 
         (
@@ -218,7 +218,7 @@ class Board:
             starting_player: agent.Agent,
     ):
         """
-        Function for starting a new fresh backgammon board
+        Function for starting a new fresh backgammon_geobadita board
         given the starting agent
         """
         if starting_player.player == Player.WHITE:

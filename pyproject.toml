@@ -1,0 +1,27 @@
+[project]
+name = "td-gammon-geobadita"
+version = "0.0.3"
+authors = [
+    { name = "Geo Badita", email = "geo.badita@gmail.com" },
+]
+description = "A TD-Gammon implementation in Python"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy", "parameterized", "tensorflow-macos"
+]
+
+[tool.poetry]
+homepage = "https://github.com/GeorgianBadita/td-gammon"
+
+[project.urls]
+"Homepage" = "https://github.com/GeorgianBadita/td-gammon"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

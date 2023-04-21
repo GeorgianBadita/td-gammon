@@ -3,8 +3,8 @@ from typing import Tuple, List, Optional
 
 from parameterized import parameterized
 
-from src.backgammon.backgammon_game import BackgammonGame, GameState, MoveRoll, Move, MoveType
-from src.backgammon.board import Player, Board
+from src.backgammon_geobadita.backgammon_game import BackgammonGame, GameState, MoveRoll, Move, MoveType
+from src.backgammon_geobadita.board import Player, Board
 
 
 def make_compute_game_state_test_data() -> List[Tuple[str, BackgammonGame, GameState]]:

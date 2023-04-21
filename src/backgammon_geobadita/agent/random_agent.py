@@ -2,9 +2,9 @@ import random
 from typing import List, Tuple
 from typing import Optional
 
-from src.backgammon.agent.agent import Agent
-from src.backgammon.backgammon_game import MoveRoll, BackgammonGame
-from src.backgammon.board import Player
+from src.backgammon_geobadita.agent.agent import Agent
+from src.backgammon_geobadita.backgammon_game import MoveRoll, BackgammonGame
+from src.backgammon_geobadita.board import Player
 
 
 class RandomAgent(Agent):
